@@ -7,4 +7,4 @@ from accounts.models import User
 class Activity(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     repo = models.CharField(max_length=255)
-    grade = models.IntegerField()
+    grade = models.IntegerField(null=True)

@@ -7,10 +7,14 @@ from rest_framework import status
 from .models import Course
 from accounts.models import User
 from .serializers import CourseSerializer
+from .permissions import FacilitatorEditProtected, InstructorWriteProtected
+from rest_framework.authentication import TokenAuthentication
 import ipdb
 
 
 class CourseRegistrationView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [InstructorWriteProtected]
 
     def put(self, request):
         course_id = request.data.get('course_id')
@@ -52,6 +56,9 @@ class CourseRegistrationView(APIView):
 
 
 class CourseView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [InstructorWriteProtected]
+
     def post(self, request):
         serializer = CourseSerializer(data=request.data)
 
@@ -63,10 +70,10 @@ class CourseView(APIView):
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
     def get(self, request, user_id=''):
-        queryset = Courses.objects.all()
+        queryset = Course.objects.all()
 
         if user_id:
-            queryset = Courses.objects.filter(user_id=user_id)
+            queryset = Course.objects.filter(user_id=user_id)
 
         serializer = CourseSerializer(queryset, many=True)
 

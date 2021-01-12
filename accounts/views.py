@@ -7,6 +7,7 @@ from rest_framework.authentication import TokenAuthentication
 from .serializers import UserSerializer
 from .models import User
 from rest_framework import status
+import ipdb
 
 
 class LoginView(APIView):
