@@ -1,7 +1,8 @@
 from rest_framework import serializers
-from accounts.models import UserSerializer
+from accounts.serializers import UserSerializer
 
 
-class Courses(serializers.Serializer):
-    name = models.CharField
-    users = UserSerializer(many=True)
+class CourseSerializer(serializers.Serializer):
+    id = serializers.IntegerField()
+    name = serializers.CharField()
+    user_set = UserSerializer(many=True, read_only=True)

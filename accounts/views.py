@@ -18,7 +18,7 @@ class LoginView(APIView):
             return Response({'token': token.key})
 
 
-class AccountsView(APIView):
+class AccountView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
 
@@ -29,11 +29,3 @@ class AccountsView(APIView):
         serializer = UserSerializer(user)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-
-class Protected(APIView):
-    authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get(self, request):
-        return Response({'user': request.user.username})
