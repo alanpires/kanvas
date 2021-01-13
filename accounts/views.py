@@ -18,6 +18,9 @@ class LoginView(APIView):
             token = Token.objects.get_or_create(user=user)[0]
             return Response({'token': token.key})
 
+        else:
+            return Response(status=status.HTTP_401_UNAUTHORIZED)
+
 
 class AccountView(APIView):
     def post(self, request):

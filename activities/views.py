@@ -25,6 +25,8 @@ class ActivityView(APIView):
         activity = Activity(**request.data)
         activity.save()
 
+        serializer = ActivitySerializer(activity)
+
         return Response(serializer.data)
 
     def post(self, request):
