@@ -36,7 +36,14 @@ class ActivityView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        activity = Activity.objects.create(**serializer.data)
+        if not request.user.is_staff and serializer.data.get('grade'):
+            activity_data = serializer.data
+            del activity_data['grade']
+            activity = Activity.objects.create(**activity_data)
+
+        else:
+            activity = Activity.objects.create(**serializer.data)
+
         serializer = ActivitySerializer(activity)
 
         return Response(serializer.data, status=status.HTTP_201_CREATED)

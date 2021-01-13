@@ -1,7 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
 from accounts.models import User
-import ipdb
 
 
 class TestAccountView(TestCase):
@@ -153,6 +152,35 @@ class TestActivityView(TestCase):
     def test_create_activities_student(self):
         client = APIClient()
         activity_data = {'repo': 'test repo', 'user_id': 1}
+
+        # test with no authentication
+        response = client.post(
+            '/api/activities/', activity_data, format='json')
+        self.assertTrue(response.status_code, 401)
+
+        # create user
+        client.post('/api/accounts/', self.student1_data, format='json')
+
+        # login
+        token = client.post(
+            '/api/login/', self.student1_login_data, format='json').json()['token']
+
+        client.credentials(HTTP_AUTHORIZATION='Token ' + token)
+
+        # create activity
+        response = client.post(
+            '/api/activities/', activity_data, format='json')
+        activity = response.json()
+
+        self.assertTrue(response.status_code, 201)
+        self.assertTrue(
+            activity, {'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None})
+
+    def test_student_cannot_assign_grade(self):
+        client = APIClient()
+        # student tries to assign grade, but it should not have
+        # any effect
+        activity_data = {'repo': 'test repo', 'user_id': 1, 'grade': 10}
 
         # test with no authentication
         response = client.post(
