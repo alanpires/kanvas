@@ -221,8 +221,6 @@ class TestActivityView(TestCase):
         activity = client.post(
             '/api/activities/', activity_data, format='json').json()
 
-        ipdb.set_trace()
-
         self.assertEqual(
             activity, {'repo': 'test repo', 'user_id': 1, 'id': 2, 'grade': None})
 
@@ -367,7 +365,7 @@ class TestActivityView(TestCase):
         self.assertEqual(4, len(all_activities))
 
         filtered_activities = client.get('/api/activities/1/').json()
-        self.assertEqual(2, len(all_activities))
+        self.assertEqual(2, len(filtered_activities))
 
     def test_facilitator_can_grade_activities(self):
         client = APIClient()
@@ -415,7 +413,7 @@ class TestActivityView(TestCase):
 
         activity = client.get('/api/activities/').json()[0]
 
-        self.assertEqual(activity['grade'], 10)
+        self.assertEqual(activity['grade'], 90)
 
 
 class TestCourseView(TestCase):
