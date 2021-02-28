@@ -1,5 +1,6 @@
 from django.test import TestCase
 from rest_framework.test import APIClient
+import ipdb
 
 
 class TestAccountView(TestCase):
@@ -155,7 +156,7 @@ class TestActivityView(TestCase):
         # test with no authentication
         response = client.post(
             '/api/activities/', activity_data, format='json')
-        self.assertTrue(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
         # create user
         client.post('/api/accounts/', self.student1_data, format='json')
@@ -171,8 +172,8 @@ class TestActivityView(TestCase):
             '/api/activities/', activity_data, format='json')
         activity = response.json()
 
-        self.assertTrue(response.status_code, 201)
-        self.assertTrue(
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
             activity, {'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None})
 
     def test_student_cannot_assign_grade(self):
@@ -184,7 +185,7 @@ class TestActivityView(TestCase):
         # test with no authentication
         response = client.post(
             '/api/activities/', activity_data, format='json')
-        self.assertTrue(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
         # create user
         client.post('/api/accounts/', self.student1_data, format='json')
@@ -200,8 +201,8 @@ class TestActivityView(TestCase):
             '/api/activities/', activity_data, format='json')
         activity = response.json()
 
-        self.assertTrue(response.status_code, 201)
-        self.assertTrue(
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
             activity, {'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None})
 
     def test_get_activities_student(self):
@@ -220,16 +221,15 @@ class TestActivityView(TestCase):
         activity = client.post(
             '/api/activities/', activity_data, format='json').json()
 
-        self.assertTrue(
-            activity, {'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None})
+        ipdb.set_trace()
 
-        self.assertTrue(
-            activity, {'repo': 'test repo', 'user_id': 1, id: 2, 'grade': None})
+        self.assertEqual(
+            activity, {'repo': 'test repo', 'user_id': 1, 'id': 2, 'grade': None})
 
-        activity_list = self.client.get('/api/activities/').json()
+        activity_list = client.get('/api/activities/').json()
 
-        self.assertTrue(activity_list, [{'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None}, {
-                        'repo': 'test repo', 'user_id': 1, 'id': 2, 'grade': None}])
+        self.assertEqual(activity_list, [{'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None}, {
+            'repo': 'test repo', 'user_id': 1, 'id': 2, 'grade': None}])
 
     def test_student_can_only_see_own_activities(self):
         client = APIClient()
@@ -266,7 +266,7 @@ class TestActivityView(TestCase):
         # student 2 only sees his own
         student_2_activities = client.get('/api/activities/').json()
 
-        self.assertTrue(2, len(student_2_activities))
+        self.assertEqual(2, len(student_2_activities))
 
     def test_facilitator_gets_all_activities(self):
         client = APIClient()
@@ -303,7 +303,7 @@ class TestActivityView(TestCase):
         # student 2 only sees his own
         student_2_activities = client.get('/api/activities/').json()
 
-        self.assertTrue(2, len(student_2_activities))
+        self.assertEqual(2, len(student_2_activities))
 
         # create facilitator user
         client.post('/api/accounts/', self.facilitator_data, format='json')
@@ -315,7 +315,7 @@ class TestActivityView(TestCase):
 
         all_activities = client.get('/api/activities/').json()
 
-        self.assertTrue(4, len(all_activities))
+        self.assertEqual(4, len(all_activities))
 
     def test_facilitator_can_filter_activities(self):
         client = APIClient()
@@ -352,7 +352,7 @@ class TestActivityView(TestCase):
         # student 2 only sees his own
         student_2_activities = client.get('/api/activities/').json()
 
-        self.assertTrue(2, len(student_2_activities))
+        self.assertEqual(2, len(student_2_activities))
 
         # create facilitator user
         client.post('/api/accounts/', self.facilitator_data, format='json')
@@ -364,10 +364,10 @@ class TestActivityView(TestCase):
 
         all_activities = client.get('/api/activities/').json()
 
-        self.assertTrue(4, len(all_activities))
+        self.assertEqual(4, len(all_activities))
 
         filtered_activities = client.get('/api/activities/1/').json()
-        self.assertTrue(2, len(all_activities))
+        self.assertEqual(2, len(all_activities))
 
     def test_facilitator_can_grade_activities(self):
         client = APIClient()
@@ -376,7 +376,7 @@ class TestActivityView(TestCase):
         # test with no authentication
         response = client.post(
             '/api/activities/', activity_data, format='json')
-        self.assertTrue(response.status_code, 401)
+        self.assertEqual(response.status_code, 401)
 
         # create user
         client.post('/api/accounts/', self.student1_data, format='json')
@@ -392,9 +392,9 @@ class TestActivityView(TestCase):
             '/api/activities/', activity_data, format='json')
         activity = response.json()
 
-        self.assertTrue(response.status_code, 201)
-        self.assertTrue(
-            activity, {'repo': 'test repo', 'user_id': 1, id: 1, 'grade': None})
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(
+            activity, {'repo': 'test repo', 'user_id': 1, 'id': 1, 'grade': None})
 
         client.post('/api/accounts/', self.facilitator_data, format='json')
 
@@ -415,7 +415,7 @@ class TestActivityView(TestCase):
 
         activity = client.get('/api/activities/').json()[0]
 
-        self.assertTrue(activity['grade'], 10)
+        self.assertEqual(activity['grade'], 10)
 
 
 class TestCourseView(TestCase):
@@ -481,7 +481,7 @@ class TestCourseView(TestCase):
         course = client.post(
             '/api/courses/', self.course_data, format='json').json()
 
-        self.assertTrue(course, {'name': 'course1', 'user_set': [], 'id': 1})
+        self.assertEqual(course, {'name': 'course1', 'user_set': [], 'id': 1})
 
     def test_facilitator_or_student_cannot_create_course(self):
         client = APIClient()
@@ -497,7 +497,7 @@ class TestCourseView(TestCase):
 
         status_code = client.post(
             '/api/courses/', self.course_data, format='json').status_code
-        self.assertTrue(status_code, 401)
+        self.assertEqual(status_code, 403)
 
         # create student
         client.post('/api/accounts/', self.facilitator_data, format='json')
@@ -510,7 +510,7 @@ class TestCourseView(TestCase):
 
         status_code = client.post(
             '/api/courses/', self.course_data, format='json').status_code
-        self.assertTrue(status_code, 401)
+        self.assertEqual(status_code, 403)
 
     def test_anonymous_can_list_courses(self):
         client = APIClient()
