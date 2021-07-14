@@ -2,20 +2,35 @@ Creating test database for alias 'default' ('file:memorydb_default?mode=memory&c
 test_create_and_login_for_facilitator_account (test_api.TestAccountView) ... ok
 test_create_and_login_for_instructor_account (test_api.TestAccountView) ... ok
 test_create_and_login_for_student_account (test_api.TestAccountView) ... ok
-test_create_activities_student (test_api.TestActivityView) ... ok
-test_facilitator_can_filter_activities (test_api.TestActivityView) ... ok
-test_facilitator_can_grade_activities (test_api.TestActivityView) ... ok
-test_facilitator_gets_all_activities (test_api.TestActivityView) ... ok
-test_get_activities_student (test_api.TestActivityView) ... ok
-test_student_can_only_see_own_activities (test_api.TestActivityView) ... ok
-test_student_cannot_assign_grade (test_api.TestActivityView) ... ok
+test_create_two_equals_users (test_api.TestAccountView) ... ok
+test_wrong_credentials_do_not_login (test_api.TestAccountView) ... ok
+test_facilitator_or_instructor_can_create_an_activity (test_api.TestActivityView) ... ok
+test_facilitator_or_instructor_can_edit_a_submission_grade (test_api.TestActivityView) ... ok
+test_facilitator_or_instructor_can_list_activities (test_api.TestActivityView) ... ok
+test_facilitator_or_instructor_can_view_all_submissions (test_api.TestActivityView) ... ok
+test_facilitator_or_instructor_cannot_submity_an_activity (test_api.TestActivityView) ... ok
+test_if_it_is_not_possible_to_create_activities_with_the_same_title (test_api.TestActivityView) ... ok
+test_student_can_submit_an_activity (test_api.TestActivityView) ... ok
+test_student_can_view_only_your_submissions (test_api.TestActivityView) ... ok
+test_student_cannot_edit_a_submission_grade (test_api.TestActivityView) ... ok
+test_student_cannot_list_activities (test_api.TestActivityView) ... ok
+test_students_cannot_create_activities (test_api.TestActivityView) ... ok
+test_anonymous_can_filter_courses (test_api.TestCourseView) ... ok
 test_anonymous_can_list_courses (test_api.TestCourseView) ... ok
+test_create_course_with_invalid_token (test_api.TestCourseView) ... ok
+test_create_two_courses_with_the_same_name_generate_the_same_ids (test_api.TestCourseView) ... ok
+test_enroll_students_with_invalid_id (test_api.TestCourseView) ... ok
+test_enrolls_students_with_invalid_course_id (test_api.TestCourseView) ... ok
 test_facilitator_or_student_cannot_create_course (test_api.TestCourseView) ... ok
 test_instructor_can_create_course (test_api.TestCourseView) ... ok
+test_instructor_can_delete_courses (test_api.TestCourseView) ... ok
 test_instructor_can_register_students_on_course (test_api.TestCourseView) ... ok
+test_only_students_can_be_enrolled_in_the_course (test_api.TestCourseView) ... ok
+test_student_or_facilitator_cannot_delete_courses (test_api.TestCourseView) ... ok
+test_whether_a_list_is_entered_to_enroll_students_in_the_course (test_api.TestCourseView) ... ok
 
 ----------------------------------------------------------------------
-Ran 14 tests in 5.357s
+Ran 29 tests in 5.181s
 
 OK
 Destroying test database for alias 'default' ('file:memorydb_default?mode=memory&cache=shared')...
@@ -43,7 +58,8 @@ Running migrations:
   Applying auth.0012_alter_user_first_name_max_length... OK
   Applying accounts.0001_initial... OK
   Applying activities.0001_initial... OK
-  Applying activities.0002_auto_20210112_2015... OK
+  Applying activities.0002_auto_20210713_1303... OK
+  Applying activities.0003_auto_20210713_1311... OK
   Applying admin.0001_initial... OK
   Applying admin.0002_logentry_remove_auto_add... OK
   Applying admin.0003_logentry_add_action_flag_choices... OK

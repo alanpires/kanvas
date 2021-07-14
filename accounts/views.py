@@ -2,12 +2,9 @@ from django.contrib.auth import authenticate
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.authentication import TokenAuthentication
 from .serializers import UserSerializer
 from .models import User
 from rest_framework import status
-import ipdb
 
 
 class LoginView(APIView):
@@ -28,6 +25,10 @@ class AccountView(APIView):
 
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        find_user = User.objects.filter(username=request.data['username']).exists()
+        if find_user == True:
+            return Response(status=status.HTTP_409_CONFLICT)
 
         user = User.objects.create_user(**request.data)
         serializer = UserSerializer(user)
