@@ -327,9 +327,34 @@ class TestCourseView(TestCase):
         course_list = client.get("/api/courses/1/")
 
         self.assertEqual(
-            course_list.json(), [{"id": 1, "name": "course1", "users": []}]
+            course_list.json(), {"id": 1, "name": "course1", "users": []}
         )
         self.assertEqual(course_list.status_code, 200)
+    
+    def test_anonymous_cannot_filter_invalid_course(self):
+        # Criação de um instructor user
+        self.client.post("/api/accounts/", self.instructor1_data, format="json")
+
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+
+        # Criação de um curso
+        course = self.client.post(
+            "/api/courses/", self.course_data, format="json"
+        ).json()
+
+        # reset client -> no login
+        client = APIClient()
+
+        # Usuários anônimos não podem filtrar curso, caso seja passado um course_id inválido.
+        # Nesse caso ele está tentando filtrar o curso 2, porém só existe o curso 1 cadastrado
+        course_list = client.get("/api/courses/2/", format='json')
+
+        self.assertEqual(course_list.json(), {'errors': 'invalid course_id'})
+        self.assertEqual(course_list.status_code, 404)
     
     def test_whether_a_list_is_entered_to_enroll_students_in_the_course(self):
         # create student 1
@@ -449,7 +474,7 @@ class TestCourseView(TestCase):
             format="json",
         )
         
-        self.assertDictEqual(response.json(), {"msg": "Only students can be enrolled in the course."})
+        self.assertDictEqual(response.json(), {"errors": "Only students can be enrolled in the course."})
         self.assertEqual(response.status_code, 400)
         
         # Matriculando um instructor user
@@ -459,7 +484,7 @@ class TestCourseView(TestCase):
             format="json",
         )
         
-        self.assertDictEqual(response.json(), {"msg": "Only students can be enrolled in the course."})
+        self.assertDictEqual(response.json(), {"errors": "Only students can be enrolled in the course."})
         self.assertEqual(response.status_code, 400)
         
         # Matriculando um facilitator e instructor
@@ -469,7 +494,7 @@ class TestCourseView(TestCase):
             format="json",
         )
         
-        self.assertDictEqual(response.json(), {"msg": "Only students can be enrolled in the course."})
+        self.assertDictEqual(response.json(), {"errors": "Only students can be enrolled in the course."})
         self.assertEqual(response.status_code, 400)
     
     def test_enrolls_students_with_invalid_course_id(self):

@@ -7,13 +7,13 @@ from rest_framework import status
 from .models import Course
 from accounts.models import User
 from .serializers import CourseSerializer
-from .permissions import IsInstructor
+from .permissions import IsInstructorOrReadOnly
 from rest_framework.authentication import TokenAuthentication
 
 
 class CourseRegistrationView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsInstructor]
+    permission_classes = [IsInstructorOrReadOnly]
 
     def put(self, request, course_id):
         user_ids = request.data.get('user_ids')
@@ -45,7 +45,7 @@ class CourseRegistrationView(APIView):
                 users_denied.append(user)
 
         if users_denied:
-            return Response({'msg': 'Only students can be enrolled in the course.'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'errors': 'Only students can be enrolled in the course.'}, status=status.HTTP_400_BAD_REQUEST)
         
         else:
             for user in users:
@@ -62,7 +62,7 @@ class CourseRegistrationView(APIView):
 
 class CourseView(APIView):
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsInstructor]
+    permission_classes = [IsInstructorOrReadOnly]
 
     def post(self, request):
         serializer = CourseSerializer(data=request.data)
@@ -76,11 +76,14 @@ class CourseView(APIView):
 
     def get(self, request, course_id=''):
         queryset = Course.objects.all()
+        serializer = CourseSerializer(queryset, many=True)
 
         if course_id:
-            queryset = Course.objects.filter(id=course_id)
-
-        serializer = CourseSerializer(queryset, many=True)
+            try:
+                queryset = Course.objects.get(id=course_id)
+                serializer = CourseSerializer(queryset)
+            except ObjectDoesNotExist:
+                return Response({'errors': 'invalid course_id'}, status=status.HTTP_404_NOT_FOUND) 
 
         return Response(serializer.data, status=status.HTTP_200_OK)
 
