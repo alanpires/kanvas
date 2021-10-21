@@ -3,7 +3,7 @@ from accounts.models import User
 
 
 class Activity(models.Model):
-    title = models.CharField(max_length=255)
+    title = models.CharField(max_length=25, unique=True)
     points = models.IntegerField(null=True)
 
 

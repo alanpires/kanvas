@@ -134,7 +134,6 @@ class TestAccountView(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response_2.status_code, 409)
 
-
 class TestCourseView(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -183,6 +182,7 @@ class TestCourseView(TestCase):
         }
 
         self.course_data = {"name": "course1"}
+        self.course_data2 = {"name": "course2"}
     
     def test_create_course_with_invalid_token(self):
         # criação de um instructor user
@@ -220,7 +220,7 @@ class TestCourseView(TestCase):
         self.assertDictEqual(course.json(), {"id": 1, "name": "course1", "users": []})
         self.assertEqual(course.status_code, 201)
     
-    def test_create_two_courses_with_the_same_name_generate_the_same_ids(self):
+    def test_cannot_create_courses_with_the_same_name(self):
         # Criação de um instructor user
         self.client.post("/api/accounts/", self.instructor1_data, format="json")
 
@@ -232,7 +232,7 @@ class TestCourseView(TestCase):
         self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
         
         # Criação do curso1
-        course_1 = self.client.post(
+        self.client.post(
             "/api/courses/", self.course_data, format="json"
         )
         
@@ -242,8 +242,64 @@ class TestCourseView(TestCase):
         )
         
         # Testa se os ids são iguais na criação do mesmo curso duas vezes 
-        self.assertDictEqual(course_1.json(), {"id": 1, "name": "course1", "users": []})
-        self.assertDictEqual(course_1_again.json(), {"id": 1, "name": "course1", "users": []})
+        self.assertEqual(course_1_again.status_code, 400)
+        self.assertDictEqual(course_1_again.json(), { 'error': 'Course with this name already exists'})
+
+    def test_update_course_name(self):
+        # Criação de um instructor user
+        self.client.post("/api/accounts/", self.instructor1_data, format="json")
+
+        # Token de instrutor
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+        
+        # Criação do curso1
+        self.client.post(
+            "/api/courses/", self.course_data, format="json"
+        )
+        
+        # Altera nome do curso1 para curso2
+        response = self.client.put(
+            "/api/courses/1/", self.course_data2, format="json"
+        )
+        
+        # Verifica se atualizou o curso
+        self.assertEqual(response.status_code, 200)
+        self.assertDictEqual(response.json(), { 'id': 1, 'name': 'course2', 'users': []})
+
+
+    def test_cannot_update_course_to_an_existing_name(self):
+        # Criação de um instructor user
+        self.client.post("/api/accounts/", self.instructor1_data, format="json")
+
+        # Token de instrutor
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+        
+        # Criação do curso1
+        self.client.post(
+            "/api/courses/", self.course_data, format="json"
+        )
+        
+        # Criação do curso2
+        self.client.post(
+            "/api/courses/", self.course_data2, format="json"
+        )
+        
+        # Altera nome do curso2 para curso1
+        response = self.client.put(
+            "/api/courses/2/", self.course_data, format="json"
+        )
+        
+        # Verifica se deu erro na hora de atualizar o curso
+        self.assertEqual(response.status_code, 400)
+        self.assertDictEqual(response.json(), { 'error': 'Course with this name already exists'})
 
     def test_facilitator_or_student_cannot_create_course(self):
         # Criação de um student user
@@ -558,8 +614,8 @@ class TestCourseView(TestCase):
             format="json",
         )
         
-        self.assertDictEqual(response.json(), {"errors": "invalid user_id list"})
-        self.assertEqual(response.status_code, 404)
+        self.assertIn(response.json().get('errors'), ["invalid user_id list", "Only students can be enrolled in the course."])
+        self.assertEqual(response.status_code, 400)
         
     def test_instructor_can_delete_courses(self):
         # Criação do instructor
@@ -686,6 +742,8 @@ class TestActivityView(TestCase):
         self.activity_data_1 = {"title": "activity1", "points": 10}
         self.activity_data_2 = {"title": "activity2", "points": 10}
         self.activity_data_3 = {"title": "activity3", "points": 10}
+        self.update_activity_data = {"title": "activity4", "points": 8}
+        self.update_activity_data2 = {"title": "activity1", "points": 5}
         self.submission_data_1 = {"grade": 10, "repo": "http://gitlab.com/submission1"}
         self.submission_data_2 = {"grade": 10, "repo": "http://gitlab.com/submission2"}
         self.submission_data_3 = {"grade": 10, "repo": "http://gitlab.com/submission3"}
@@ -725,6 +783,51 @@ class TestActivityView(TestCase):
         )
         
         self.assertDictEqual(activity.json(), {"id": 2, "title": "activity2", "points": 10, "submissions": []})
+        self.assertEqual(activity.status_code, 201)
+    
+    def test_facilitator_or_instructor_can_update_an_activity(self):
+        # Criação do instructor
+        self.client.post("/api/accounts/", self.instructor1_data, format="json")
+
+        # Autenticação do instructor
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+
+        # Criação da activity 1 pelo instructor
+        activity = self.client.post(
+            "/api/activities/", self.activity_data_1, format="json"
+        )
+        
+        self.assertDictEqual(activity.json(), {"id": 1, "title": "activity1", "points": 10, "submissions": []})
+        self.assertEqual(activity.status_code, 201)
+        
+        # Atualizando a activity 1 com o instructor
+        activity = self.client.put(
+            "/api/activities/1", self.update_activity_data, format="json"
+        )
+        
+        self.assertDictEqual(activity.json(), {"id": 1, "title": "activity4", "points": 8, "submissions": []})
+        self.assertEqual(activity.status_code, 201)
+        
+        # Criação do facilitator
+        self.client.post("/api/accounts/", self.facilitator_data, format="json")
+
+        # Autenticação do instructor
+        token = self.client.post(
+            "/api/login/", self.facilitator_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+        
+        # Criação da activity 2 pelo facilitator
+        activity = self.client.put(
+            "/api/activities/1", self.update_activity_data2, format="json"
+        )
+        
+        self.assertDictEqual(activity.json(), {"id": 1, "title": "activity1", "points": 5, "submissions": []})
         self.assertEqual(activity.status_code, 201)
     
     def test_students_cannot_create_activities(self):
@@ -769,8 +872,37 @@ class TestActivityView(TestCase):
             "/api/activities/", {"title": "activity1", "points": 8}, format="json"
         )
         
-        self.assertDictEqual(activity2.json(), {"id": 1, "title": "activity1", "points": 8, "submissions": []})
-        self.assertEqual(activity1.status_code, 201)        
+        self.assertDictEqual(activity2.json(), { 'error': 'Activity with this name already exists'})
+        self.assertEqual(activity2.status_code, 400)        
+    
+    def test_if_it_is_not_possible_to_updata_activity_to_an_existing_title(self):
+        # Criação do instructor
+        self.client.post("/api/accounts/", self.instructor1_data, format="json")
+
+        # Autenticação do instructor
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+
+        # Criação da activity 1 pelo instructor
+        self.client.post(
+            "/api/activities/", self.activity_data_1, format="json"
+        )
+        
+        # Criação da activity 2 pelo instructor
+        self.client.post(
+            "/api/activities/", self.activity_data_2, format="json"
+        )
+        
+        # Atualização da activity 2 para o mesmo titulo da activity 1
+        activity = self.client.put(
+            "/api/activities/2", self.update_activity_data2, format="json"
+        )
+        
+        self.assertDictEqual(activity.json(), { 'error': 'Activity with this name already exists'})
+        self.assertEqual(activity.status_code, 400)       
     
     def test_facilitator_or_instructor_can_list_activities(self):
         # Criação do instructor
@@ -1183,5 +1315,4 @@ class TestActivityView(TestCase):
                                                   {"id": 5, "grade": None, "repo": "http://gitlab.com/submission3", "user_id": 3, "activity_id": 3}
                                                   ])
         self.assertEqual(submissions.status_code, 200)
-    
-    
+      

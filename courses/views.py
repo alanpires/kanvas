@@ -1,5 +1,6 @@
+from django.db.utils import IntegrityError
 from django.shortcuts import render
-from rest_framework.views import APIView
+from rest_framework.views import APIView, exception_handler
 from rest_framework.response import Response
 from rest_framework.authentication import TokenAuthentication
 from django.core.exceptions import ObjectDoesNotExist
@@ -36,7 +37,7 @@ class CourseRegistrationView(APIView):
                 users.append(user)
 
             except ObjectDoesNotExist:
-                return Response({'errors': 'invalid user_id list'}, status=status.HTTP_404_NOT_FOUND)
+                return Response({'errors': 'invalid user_id list'}, status=status.HTTP_400_BAD_REQUEST)
 
         users_denied = []
 
@@ -70,7 +71,11 @@ class CourseView(APIView):
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        course = Course.objects.get_or_create(**request.data)[0]
+        try:
+            course = Course.objects.create(**serializer.validated_data)
+        except IntegrityError:
+            return Response({ 'error': 'Course with this name already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
         serializer = CourseSerializer(course)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
@@ -96,3 +101,24 @@ class CourseView(APIView):
         
         course.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
+    
+    def put(self, request, course_id):
+        try:
+            course = Course.objects.get(id=course_id)
+        
+        except ObjectDoesNotExist:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+        
+        serializer = CourseSerializer(data=request.data)
+        
+        serializer.is_valid(raise_exception=True)
+        
+        course.name = serializer.validated_data.get('name')
+        
+        try:
+            course.save()
+        except IntegrityError:
+            return Response({ 'error': 'Course with this name already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        
+        serializer = CourseSerializer(course)
+        return Response(serializer.data, status=status.HTTP_200_OK)

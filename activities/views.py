@@ -1,5 +1,4 @@
-from django.shortcuts import render
-from rest_framework import response, serializers
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from .models import Activity, Submission
@@ -11,7 +10,7 @@ from rest_framework import status
 from courses.models import Course
 from django.core.exceptions import ObjectDoesNotExist
 from accounts.models import User
-
+from django.db.utils import IntegrityError
 
 class ActivityView(APIView):
     authentication_classes = [TokenAuthentication]
@@ -22,11 +21,13 @@ class ActivityView(APIView):
         
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)  
-        
-        activity = Activity.objects.get_or_create(title=request.data['title'])[0]
-        activity.points = request.data['points']
-        activity.save()
-        
+        try:
+            activity = Activity.objects.create(
+                title=serializer.validated_data.get('title'),
+                points=serializer.validated_data.get('points', None)
+            )
+        except IntegrityError:
+            return Response({ 'error': 'Activity with this name already exists'}, status=status.HTTP_400_BAD_REQUEST)
         serializer = ActivitySerializer(activity)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
     
@@ -34,6 +35,29 @@ class ActivityView(APIView):
         activities = Activity.objects.all()
         serializer = ActivitySerializer(activities, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+    
+    
+class ActivityDetailView(APIView):
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsInstructorOrFacilitator]
+    
+    def put(self, request, *args, **kwargs):
+        serializer = ActivitySerializer(data=request.data)
+        
+        serializer.is_valid(raise_exception=True)
+        
+        activity = get_object_or_404(Activity, id=kwargs.get('activity_id', None))
+        
+        activity.title = request.data.get('title')
+        activity.points = request.data.get('points', None)
+        
+        try:
+            activity.save()
+        except IntegrityError:
+            return Response({ 'error': 'Activity with this name already exists'}, status=status.HTTP_400_BAD_REQUEST)
+    
+        serializer = ActivitySerializer(activity)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
     
     
 class ActivitySubmissionView(APIView):
