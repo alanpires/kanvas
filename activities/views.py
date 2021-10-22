@@ -48,6 +48,9 @@ class ActivityDetailView(APIView):
         
         activity = get_object_or_404(Activity, id=kwargs.get('activity_id', None))
         
+        if activity.submissions.count() > 0:
+            return Response({ 'error': 'You can not change an Activity with submissions'}, status=status.HTTP_400_BAD_REQUEST)
+        
         activity.title = request.data.get('title')
         activity.points = request.data.get('points', None)
         
