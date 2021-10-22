@@ -875,7 +875,7 @@ class TestActivityView(TestCase):
         self.assertDictEqual(activity2.json(), { 'error': 'Activity with this name already exists'})
         self.assertEqual(activity2.status_code, 400)        
     
-    def test_if_it_is_not_possible_to_updata_activity_to_an_existing_title(self):
+    def test_if_it_is_not_possible_to_update_activity_to_an_existing_title(self):
         # Criação do instructor
         self.client.post("/api/accounts/", self.instructor1_data, format="json")
 
@@ -904,6 +904,50 @@ class TestActivityView(TestCase):
         self.assertDictEqual(activity.json(), { 'error': 'Activity with this name already exists'})
         self.assertEqual(activity.status_code, 400)       
     
+    def test_if_it_is_not_possible_to_update_activity_with_an_existing_submission(self):
+        # Criação do instructor
+        self.client.post("/api/accounts/", self.instructor1_data, format="json")
+
+        # Autenticação do instructor
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+
+        # Criação da activity 1 pelo instructor
+        self.client.post(
+            "/api/activities/", self.activity_data_1, format="json"
+        )        
+        
+        # Criação do student
+        self.client.post("/api/accounts/", self.student1_data, format="json")
+
+        # Autenticação do student
+        token = self.client.post(
+            "/api/login/", self.student1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+        
+        # Estudante faz uma submissão de uma atividade com o campo grade
+        self.client.post("/api/activities/1/submissions/", self.submission_data_1, format="json")
+        
+        # Autenticação do instrutor
+        token = self.client.post(
+            "/api/login/", self.instructor1_login_data, format="json"
+        ).json()["token"]
+
+        self.client.credentials(HTTP_AUTHORIZATION="Token " + token)
+        
+        # Tenta fazer uma alteração da atividade
+        activity = self.client.put(
+            "/api/activities/1", self.update_activity_data2, format="json"
+        )
+        
+        self.assertEqual(activity.status_code, 400)
+        self.assertDictEqual(activity.json(), {'error': 'You can not change an Activity with submissions'})
+        
     def test_facilitator_or_instructor_can_list_activities(self):
         # Criação do instructor
         self.client.post("/api/accounts/", self.instructor1_data, format="json")
