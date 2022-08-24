@@ -1,4 +1,4 @@
-KMDb
+Kanvas
 ========
 
 Esse projeto simula um sistema de gerenciamento de atividades, submissões e avaliações de alunos.
